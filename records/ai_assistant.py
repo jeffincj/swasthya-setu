@@ -19,6 +19,15 @@ LANGUAGE_NAMES = {
     "bn": "Bengali", "or": "Odia", "as": "Assamese",
 }
 
+# Native-script name for each language, used to reinforce the instruction to
+# smaller/faster models that sometimes default to English or Hindi despite
+# being told the language name in English - seeing the language's own script
+# name makes the instruction much harder to ignore.
+LANGUAGE_NATIVE_NAMES = {
+    "en": "English", "hi": "हिन्दी (Hindi)", "ml": "മലയാളം (Malayalam)",
+    "bn": "বাংলা (Bengali)", "or": "ଓଡ଼ିଆ (Odia)", "as": "অসমীয়া (Assamese)",
+}
+
 # Offline fallback templates, per language, so the demo stays multilingual
 # even with zero API keys configured.
 FALLBACK_TEMPLATES = {
@@ -107,7 +116,7 @@ def _call_llm(system_prompt, user_question):
             from groq import Groq
             client = Groq(api_key=groq_key)
             resp = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_question},
@@ -145,13 +154,26 @@ def answer_patient_question(patient, question, language_override=None):
     """
     lang_code = language_override or patient.preferred_language
     lang_name = LANGUAGE_NAMES.get(lang_code, "English")
+    lang_native = LANGUAGE_NATIVE_NAMES.get(lang_code, "English")
     context = build_patient_context(patient)
 
     system_prompt = f"""You are a calm, clear medical record assistant helping a migrant
-worker understand their OWN health record. You must:
+worker understand their OWN health record.
+
+CRITICAL LANGUAGE RULE - follow this exactly, it is the most important instruction:
+- You MUST write your ENTIRE response in {lang_native}.
+- Use the native script of that language (e.g. Malayalam script for Malayalam, Bengali
+  script for Bengali) - NOT English letters, NOT a transliteration, NOT romanized text.
+- Do NOT default to Hindi or English under any circumstance, even if the question
+  itself was typed in English or a different language.
+- If you are unsure how to say something in {lang_name}, do your best in {lang_name}
+  anyway - do not switch languages.
+
+OTHER RULES:
 - Answer ONLY using the record data provided below - never invent medical information
-- Respond in {lang_name}, in simple, non-technical language
-- If the record doesn't contain the answer, say so honestly and suggest they ask clinic staff
+- Use simple, non-technical language
+- If the record doesn't contain the answer, say so honestly (in {lang_name}) and
+  suggest they ask clinic staff
 - Never diagnose new conditions or suggest new medications - you only explain existing records
 - Keep answers short (2-4 sentences)
 
