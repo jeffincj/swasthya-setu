@@ -1,0 +1,16 @@
+{% extends "records/base.html" %}
+{% block title %}Login - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 0 auto;">
+  <h1>Login</h1>
+  <form method="post">
+    {% csrf_token %}
+    <label>Username</label>
+    <input type="text" name="username" required>
+    <label>Password</label>
+    <input type="password" name="password" required>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <button type="submit">Login</button>
+  </form>
+</div>
+{% endblock %}

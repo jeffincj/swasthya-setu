@@ -1,0 +1,30 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-staff{% endblock %}
+{% block title %}Propose Changes - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Propose Changes to Patient Record</h1>
+  <p class="subtitle">Patient: {{ patient.full_name }} ({{ patient.health_id }})</p>
+  <p style="font-size:13px; color:var(--muted); background:#fffbeb; padding:10px 14px; border-radius:6px;">
+    ⚠ These changes will NOT be applied immediately. The patient must review and approve
+    them from their own dashboard first — this protects their record from unauthorized changes.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <label>Full Name</label>
+    {{ form.full_name }}
+    <label>Phone Number</label>
+    {{ form.phone_number }}
+    <label>Current Worksite</label>
+    {{ form.current_worksite }}
+    <label>Known Conditions</label>
+    {{ form.known_conditions }}
+    <label>Known Allergies</label>
+    {{ form.known_allergies }}
+    <label>{{ form.reason.label }}</label>
+    {{ form.reason }}
+    <button type="submit">Submit for Patient Approval</button>
+  </form>
+</div>
+{% endblock %}

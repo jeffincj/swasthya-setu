@@ -1,0 +1,146 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-patient{% endblock %}
+{% block title %}My Health Record - Swasthya Setu{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h1>Welcome, {{ patient.full_name }}</h1>
+  <p class="subtitle">Home state: {{ patient.get_home_state_display|default:patient.home_state }} &middot; Working in: {{ patient.current_worksite }}</p>
+
+  <div class="qr-box">
+    {% if patient.qr_code %}
+      <img src="{{ patient.qr_code.url }}" alt="Your Health QR Code">
+    {% endif %}
+    <p style="font-size:12px; color:var(--muted); margin-top:8px;">Your Health ID: <strong>{{ patient.health_id }}</strong></p>
+    <p style="font-size:12px; color:var(--muted);">Show this QR code at any clinic to instantly share your record.</p>
+  </div>
+</div>
+
+{% if pending_edits %}
+<div class="card" style="border: 2px solid #f59e0b;">
+  <h2>⚠ <span data-i18n="pd_pending_edits">Changes Awaiting Your Approval</span></h2>
+  <p style="font-size:13px; color:var(--muted);">A clinic has proposed changes to your record. Nothing changes until you approve.</p>
+  {% for req in pending_edits %}
+    <div class="visit-item" style="border-left-color:#f59e0b;">
+      <strong>Requested by:</strong> {{ req.requested_by.staff_profile.clinic_name|default:req.requested_by.username }}<br>
+      <strong>Reason:</strong> {{ req.reason }}<br>
+      <strong>Proposed changes:</strong>
+      <ul style="margin:6px 0;">
+        {% for field, value in req.changes.items %}
+          <li>{{ field }} → {{ value }}</li>
+        {% endfor %}
+      </ul>
+      <a href="{% url 'review_edit_request' req.id 'approve' %}" class="btn" style="margin-top:6px; padding:6px 16px;">✔ Approve</a>
+      <a href="{% url 'review_edit_request' req.id 'reject' %}" class="btn btn-secondary" style="margin-top:6px; padding:6px 16px;">✕ Reject</a>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>💰 <span data-i18n="pd_scheme_eligibility">Scheme Eligibility</span></h2>
+  {% if eligibility.eligible == True %}
+    <span class="tag">✔ Likely Eligible — PM-JAY</span>
+  {% elif eligibility.eligible == "possible" %}
+    <span class="tag tag-warning">⚠ Possibly Eligible</span>
+  {% else %}
+    <span class="tag tag-warning">Check with clinic staff</span>
+  {% endif %}
+  <p style="font-size:14px; color:var(--muted); margin-top:8px;">{{ eligibility.message }}</p>
+  <p style="font-size:11px; color:var(--muted); font-style:italic;">Note: this is a rule-based estimate for guidance only, not a live government verification.</p>
+</div>
+
+<div class="card">
+  <h2>🤖 <span data-i18n="pd_ask_record">Ask About Your Record</span> <span id="ai-status" class="badge-offline">checking...</span></h2>
+  <p style="font-size:13px; color:var(--muted);">Ask in your own language — e.g. "What medication am I on?" or "যখন আমার পরবর্তী চেকআপ?"</p>
+
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+    <label style="margin:0; font-size:13px;" data-i18n="pd_reply_language">Reply language:</label>
+    <select id="reply-language" style="width:auto; padding:6px 10px;">
+      <option value="en">English</option>
+      <option value="hi">Hindi</option>
+      <option value="bn">Bengali</option>
+      <option value="ml">Malayalam</option>
+      <option value="or">Odia</option>
+      <option value="as">Assamese</option>
+    </select>
+  </div>
+
+  <div class="chat-box" id="chat-box"></div>
+  <form id="chat-form" style="display:flex; gap:8px;">
+    <input type="text" id="chat-input" placeholder="Type your question..." data-i18n-placeholder="pd_type_question" style="flex:1;">
+    <button type="submit" style="margin-top:0;" data-i18n="pd_ask_btn">Ask</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>📋 <span data-i18n="pd_visit_history">Visit History</span></h2>
+  {% if visits %}
+    {% for v in visits %}
+      <div class="visit-item">
+        <strong>{{ v.visit_date }}</strong> — {{ v.clinic_name }}<br>
+        <span style="color:var(--muted);">Diagnosis:</span> {{ v.diagnosis }}<br>
+        <span style="color:var(--muted);">Medications:</span> {{ v.medications_prescribed }}
+        {% if v.follow_up_date %}<br><span style="color:var(--muted);">Follow-up:</span> {{ v.follow_up_date }}{% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:var(--muted);">No visits recorded yet. Your history will appear here after your first clinic visit.</p>
+  {% endif %}
+</div>
+
+<script>
+const chatBox = document.getElementById('chat-box');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+
+// Pre-select the dropdown to the patient's saved preferred language
+document.getElementById('reply-language').value = "{{ patient.preferred_language }}";
+
+function addMsg(text, cls) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + cls;
+  div.textContent = text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+chatForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const question = chatInput.value.trim();
+  if (!question) return;
+  addMsg(question, 'chat-user');
+  chatInput.value = '';
+  const language = document.getElementById('reply-language').value;
+
+  try {
+    const res = await fetch("{% url 'ask_assistant' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ question, language }),
+    });
+    const data = await res.json();
+    addMsg(data.answer || data.error || "Something went wrong.", 'chat-ai');
+    const statusEl = document.getElementById('ai-status');
+    if (data.offline === true) {
+      statusEl.textContent = "offline mode";
+      statusEl.className = "badge-offline";
+    } else if (data.offline === false) {
+      statusEl.textContent = "AI connected";
+      statusEl.className = "badge-online";
+    }
+  } catch (err) {
+    addMsg("Connection error. Please try again.", 'chat-ai');
+  }
+});
+</script>
+{% endblock %}

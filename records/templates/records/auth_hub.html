@@ -1,0 +1,245 @@
+{% extends "records/base.html" %}
+{% block body_class %}auth-page{% endblock %}
+{% block title %}Swasthya Setu{% endblock %}
+{% block content %}
+
+<div class="auth-container" id="auth-container">
+
+  <!-- SIGN IN FORM -->
+  <div class="form-container sign-in">
+    <form method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      <div class="brand-mini">🩺 Swasthya Setu</div>
+      <h2 data-i18n="auth_signin_title">Sign In</h2>
+      {% if error %}<p class="error">{{ error }}</p>{% endif %}
+      <input type="text" name="username" placeholder="Username" data-i18n-placeholder="auth_username" required>
+      <input type="password" name="password" placeholder="Password" data-i18n-placeholder="auth_password" required>
+      <button type="submit" data-i18n="auth_signin_btn">Sign In</button>
+      <p class="fine-print">
+        Central Government? Sign in above, then visit
+        <a href="{% url 'govt_dashboard' %}">the Government Dashboard</a>.
+      </p>
+    </form>
+  </div>
+
+  <!-- SIGN UP FORM (role sub-tabs inside) -->
+  <div class="form-container sign-up">
+    <div class="role-toggle">
+      <button type="button" class="role-btn active" data-role="patient" onclick="showRole('patient')" data-i18n="auth_signup_patient_tab">I'm a Patient</button>
+      <button type="button" class="role-btn" data-role="staff" onclick="showRole('staff')" data-i18n="auth_signup_staff_tab">I'm Clinic Staff</button>
+    </div>
+
+    <!-- Patient registration -->
+    <form method="post" action="{% url 'register_patient' %}" enctype="multipart/form-data" id="role-patient" class="role-form">
+      {% csrf_token %}
+      <h2 data-i18n="auth_patient_title">Create Patient Account</h2>
+      <input type="text" name="username" placeholder="Choose a username" required>
+      <input type="password" name="password" placeholder="Choose a password" required>
+      <input type="text" name="full_name" placeholder="Full Name" required>
+      <input type="text" name="phone_number" placeholder="Phone Number">
+      <input type="text" name="home_state" placeholder="Home State" required>
+      <input type="text" name="current_worksite" placeholder="Current Worksite (Kerala)" required>
+      <select name="preferred_language">
+        <option value="hi">Hindi</option>
+        <option value="bn">Bengali</option>
+        <option value="ml">Malayalam</option>
+        <option value="or">Odia</option>
+        <option value="as">Assamese</option>
+        <option value="en">English</option>
+      </select>
+      <select name="income_bracket">
+        <option value="below_2.5l">Below ₹2.5 Lakh / year</option>
+        <option value="2.5l_to_5l">₹2.5L - ₹5L / year</option>
+        <option value="above_5l">Above ₹5 Lakh / year</option>
+      </select>
+      <textarea name="known_conditions" placeholder="Known conditions (optional)" rows="2"></textarea>
+      <textarea name="known_allergies" placeholder="Known allergies (optional)" rows="2"></textarea>
+      {% if patient_form.errors %}<p class="error">Please check your details.</p>{% endif %}
+      <button type="submit" data-i18n="auth_patient_btn">Register & Get My Health ID</button>
+    </form>
+
+    <!-- Clinic staff registration -->
+    <form method="post" action="{% url 'register_clinic_staff' %}" id="role-staff" class="role-form" style="display:none;">
+      {% csrf_token %}
+      <h2 data-i18n="auth_staff_title">Request Clinic Staff Account</h2>
+      <p class="pending-note" data-i18n="auth_staff_note">⚠ Requires Central Government approval before you can log in.</p>
+      <input type="text" name="username" placeholder="Choose a username" required>
+      <input type="password" name="password" placeholder="Choose a password" required>
+      <input type="text" name="clinic_name" placeholder="Clinic Name" required>
+      <input type="text" name="phone_number" placeholder="Phone Number">
+      {% if staff_form.non_field_errors %}<p class="error">{{ staff_form.non_field_errors.0 }}</p>{% endif %}
+      <button type="submit" class="staff-btn" data-i18n="auth_staff_btn">Submit Registration Request</button>
+    </form>
+  </div>
+
+  <!-- SLIDING OVERLAY -->
+  <div class="overlay-container">
+    <div class="overlay">
+      <div class="overlay-panel overlay-left">
+        <h2 data-i18n="auth_welcome_title">Welcome Back!</h2>
+        <p data-i18n="auth_welcome_desc">A health record that travels with you — across worksites, across states, in your own language.</p>
+        <p style="font-size:13px; opacity:0.8;">Already have your Health ID or Clinic access? Sign in to continue.</p>
+        <button type="button" class="ghost-btn" onclick="toggleAuth('signin')" data-i18n="auth_signin_ghost">Sign In</button>
+      </div>
+      <div class="overlay-panel overlay-right">
+        <h2 data-i18n="auth_new_title">New Here?</h2>
+        <p data-i18n="auth_new_desc">Register as a Patient to get your QR Health ID, or request Clinic Staff access.</p>
+        <button type="button" class="ghost-btn" onclick="toggleAuth('signup')" data-i18n="auth_signup_ghost">Sign Up</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Full-screen, no-scroll layout for this page only */
+  body.auth-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  body.auth-page nav { flex: 0 0 auto; }
+  body.auth-page .container {
+    flex: 1 1 auto;
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .brand-mini { font-weight: 800; font-size: 15px; color: var(--primary-dark); margin-bottom: 18px; letter-spacing: 0.3px; }
+  .fine-print { font-size: 12px; color: var(--muted); margin-top: 18px; text-align: center; }
+  .fine-print a { color: var(--primary-dark); font-weight: 600; }
+
+  .auth-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: var(--card);
+    overflow: hidden;
+    transform-style: preserve-3d;
+  }
+
+  .form-container {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    transition: all 0.6s ease-in-out;
+    padding: 40px 60px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .form-container form { display:flex; flex-direction:column; gap:12px; max-width: 400px; margin: 0 auto; width: 100%; }
+  .form-container h2 { color: var(--primary-dark); margin-bottom: 4px; font-size: 22px; }
+  .form-container input,
+  .form-container select,
+  .form-container textarea {
+    padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; width:100%;
+    font-family: inherit;
+  }
+  .form-container button[type="submit"] {
+    background: var(--primary); color:white; border:none; padding:12px; border-radius:8px;
+    font-weight:600; cursor:pointer; margin-top:6px;
+  }
+  .form-container button.staff-btn { background: #4338ca; }
+
+  .sign-in { left: 0; z-index: 2; }
+  .sign-up { left: 0; opacity: 0; z-index: 1; }
+
+  .auth-container.active .sign-in { transform: translateX(100%); opacity: 0; z-index: 1; }
+  .auth-container.active .sign-up { transform: translateX(100%); opacity: 1; z-index: 5; }
+
+  .overlay-container {
+    position: absolute; top: 0; left: 50%; width: 50%; height: 100%;
+    overflow: hidden; transition: transform 0.6s ease-in-out; z-index: 100;
+  }
+  .auth-container.active .overlay-container { transform: translateX(-100%); }
+
+  .overlay {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white; position: relative; left: -100%; height: 100%; width: 200%;
+    transform: translateX(0); transition: transform 0.6s ease-in-out;
+  }
+  .auth-container.active .overlay { transform: translateX(50%); }
+
+  .overlay-panel {
+    position: absolute; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; top:0; height:100%; width:50%; padding: 0 50px;
+  }
+  .overlay-left { transform: translateX(-20%); }
+  .auth-container.active .overlay-left { transform: translateX(0); }
+  .overlay-right { right: 0; transform: translateX(0); }
+  .auth-container.active .overlay-right { transform: translateX(20%); }
+
+  .overlay-panel h2 { color:white; margin-bottom:10px; font-size: 26px; }
+  .overlay-panel p { font-size:14px; opacity:0.9; margin-bottom:16px; line-height:1.5; }
+  .ghost-btn {
+    background: transparent; border: 2px solid white; color: white;
+    padding: 10px 28px; border-radius: 24px; font-weight:600; cursor:pointer; margin-top: 8px;
+  }
+  .ghost-btn:hover { background: rgba(255,255,255,0.15); }
+
+  .role-toggle { display:flex; gap:8px; margin-bottom:14px; max-width:400px; margin-left:auto; margin-right:auto; }
+  .role-btn {
+    flex:1; padding:9px; border-radius:20px; border:1.5px solid var(--border);
+    background:white; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer;
+  }
+  .role-btn.active { background: var(--primary); border-color: var(--primary); color:white; }
+  .pending-note {
+    font-size:12px; color:#92400e; background:#fffbeb; padding:8px 12px; border-radius:6px; margin-bottom:2px;
+  }
+  .error { color: var(--danger); font-size: 13px; }
+
+  @media (max-width: 720px) {
+    .form-container { width: 100%; position: relative; padding: 28px 24px; }
+    .overlay-container { display: none; }
+    .sign-up { display: none; }
+    .auth-container.mobile-signup .sign-in { display: none; }
+    .auth-container.mobile-signup .sign-up { display: block; opacity: 1; }
+    body.auth-page { overflow-y: auto; height: auto; min-height: 100vh; }
+  }
+</style>
+
+<script>
+function toggleAuth(mode) {
+  const container = document.getElementById('auth-container');
+  if (window.innerWidth <= 720) {
+    container.classList.toggle('mobile-signup', mode === 'signup');
+    return;
+  }
+  container.classList.toggle('active', mode === 'signup');
+}
+function showRole(role) {
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-role="' + role + '"]').classList.add('active');
+  document.getElementById('role-patient').style.display = role === 'patient' ? 'flex' : 'none';
+  document.getElementById('role-staff').style.display = role === 'staff' ? 'flex' : 'none';
+}
+
+const initialTab = "{{ active_tab|default:'login' }}";
+if (initialTab === 'staff') {
+  toggleAuth('signup'); showRole('staff');
+} else if (initialTab === 'patient') {
+  toggleAuth('signup'); showRole('patient');
+}
+
+const authCard = document.getElementById('auth-container');
+if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  authCard.addEventListener('mousemove', (e) => {
+    const rect = authCard.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    authCard.style.transform = `perspective(1600px) rotateY(${x * 2}deg) rotateX(${-y * 2}deg)`;
+  });
+  authCard.addEventListener('mouseleave', () => {
+    authCard.style.transform = 'perspective(1600px) rotateY(0deg) rotateX(0deg)';
+  });
+}
+</script>
+{% endblock %}

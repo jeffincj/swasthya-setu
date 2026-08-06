@@ -1,0 +1,51 @@
+{% extends "records/base.html" %}
+{% block title %}Register - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Patient Registration</h1>
+  <p class="subtitle">Create your health record. Takes about a minute.</p>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label>Choose a username</label>
+    {{ form.username }}
+
+    <label>Choose a password</label>
+    {{ form.password }}
+
+    <label>Full Name</label>
+    {{ form.full_name }}
+
+    <label>Photo (optional)</label>
+    {{ form.photo }}
+
+    <label>Phone Number</label>
+    {{ form.phone_number }}
+
+    <label>Home State</label>
+    {{ form.home_state }}
+
+    <label>Current Worksite (Kerala)</label>
+    {{ form.current_worksite }}
+
+    <label>Preferred Language</label>
+    {{ form.preferred_language }}
+
+    <label>Income Bracket</label>
+    {{ form.income_bracket }}
+
+    <label>Known Conditions (if any)</label>
+    {{ form.known_conditions }}
+
+    <label>Known Allergies (if any)</label>
+    {{ form.known_allergies }}
+
+    {% if form.errors %}
+      <p class="error">Please check the form — some fields need correction.</p>
+    {% endif %}
+
+    <button type="submit">Register & Generate My Health ID</button>
+  </form>
+</div>
+{% endblock %}

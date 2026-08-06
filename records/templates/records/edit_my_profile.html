@@ -1,0 +1,27 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-patient{% endblock %}
+{% block title %}Update My Details - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px; margin:0 auto;">
+  <h1>Update My Details</h1>
+  <p class="subtitle">
+    You can update your worksite, phone number, and preferred language directly —
+    no approval needed, this is your own information.
+  </p>
+  <p style="font-size:12px; color:var(--muted); background:#f0fdfa; padding:10px 14px; border-radius:6px; margin-bottom:16px;">
+    Note: Medical conditions and allergies can only be updated by a clinic (with your
+    approval) since those need clinical verification.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <label>Phone Number</label>
+    {{ form.phone_number }}
+    <label>Current Worksite</label>
+    {{ form.current_worksite }}
+    <label>Preferred Language</label>
+    {{ form.preferred_language }}
+    <button type="submit">Save Changes</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "records/base.html" %}
+{% block title %}Swasthya Setu - Health Bridge for Migrant Workers{% endblock %}
+{% block content %}
+<div class="card" style="text-align:center; padding: 48px 24px;">
+  <h1>Swasthya Setu 🩺</h1>
+  <p class="subtitle">A health record that travels with you — across worksites, across states, in your own language.</p>
+  <p style="color: var(--muted); max-width: 560px; margin: 0 auto 24px;">
+    Built for Kerala's 2.5+ million migrant workers, who often lose medical continuity
+    every time they move. One QR code. Your full history. Explained in Bengali, Hindi,
+    Malayalam, or Odia — whichever you understand best.
+  </p>
+  <a href="{% url 'register_patient' %}" class="btn">Register as Patient</a>
+  <a href="{% url 'login' %}" class="btn btn-secondary">Login</a>
+</div>
+
+<div class="card">
+  <h2>For Clinic Staff</h2>
+  <p style="color: var(--muted); font-size: 14px;">
+    Clinic staff accounts are created via the admin panel (<code>/admin/</code>) and added
+    to the "ClinicStaff" group. Once logged in, staff can look up any patient by QR/Health ID
+    and add new visit records.
+  </p>
+</div>
+{% endblock %}

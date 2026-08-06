@@ -1,0 +1,25 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-staff{% endblock %}
+{% block title %}My Patients - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>My Patients</h1>
+  <p class="subtitle">Patients you have personally logged a visit for.</p>
+
+  {% for item in patients %}
+    <div class="visit-item">
+      <strong>{{ item.patient.full_name }}</strong>
+      <span style="font-size:12px; color:var(--muted);">({{ item.patient.home_state }} — {{ item.patient.current_worksite }})</span><br>
+      {% if item.last_visit %}
+        <span style="color:var(--muted); font-size:13px;">Last visit: {{ item.last_visit.visit_date }} — {{ item.last_visit.diagnosis }}</span>
+      {% endif %}
+      <br>
+      <a href="{% url 'clinic_dashboard' %}?health_id={{ item.patient.health_id }}" style="font-size:13px; color:var(--primary-dark); font-weight:600;">
+        View Full Record →
+      </a>
+    </div>
+  {% empty %}
+    <p style="color:var(--muted);">You haven't logged any visits yet. Once you add a visit record for a patient, they'll show up here.</p>
+  {% endfor %}
+</div>
+{% endblock %}

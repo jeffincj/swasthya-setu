@@ -1,0 +1,38 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-govt{% endblock %}
+{% block title %}Central Government Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>🏛 Central Government Dashboard</h1>
+  <p class="subtitle">Review and approve clinic staff registration requests.</p>
+</div>
+
+<div class="card">
+  <h2>Pending Requests ({{ pending_staff|length }})</h2>
+  {% for profile in pending_staff %}
+    <div class="visit-item">
+      <strong>{{ profile.user.username }}</strong> — {{ profile.clinic_name }}<br>
+      <span style="color:var(--muted); font-size:13px;">Phone: {{ profile.phone_number|default:"—" }} &middot; Requested: {{ profile.requested_at|date:"d M Y, H:i" }}</span>
+      <div style="margin-top:10px;">
+        <a href="{% url 'review_staff_request' profile.id 'approve' %}" class="btn" style="margin-top:0; padding:6px 16px;">✔ Approve</a>
+        <a href="{% url 'review_staff_request' profile.id 'reject' %}" class="btn btn-secondary" style="margin-top:0; padding:6px 16px;">✕ Reject</a>
+      </div>
+    </div>
+  {% empty %}
+    <p style="color:var(--muted);">No pending requests.</p>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2>Reviewed Requests</h2>
+  {% for profile in all_staff %}
+    <div class="visit-item" style="border-left-color: {% if profile.status == 'approved' %}#16a34a{% else %}#dc2626{% endif %};">
+      <strong>{{ profile.user.username }}</strong> — {{ profile.clinic_name }}
+      <span class="tag {% if profile.status == 'rejected' %}tag-warning{% endif %}">{{ profile.get_status_display }}</span><br>
+      <span style="color:var(--muted); font-size:12px;">Reviewed: {{ profile.reviewed_at|date:"d M Y, H:i" }} by {{ profile.reviewed_by }}</span>
+    </div>
+  {% empty %}
+    <p style="color:var(--muted);">No reviewed requests yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

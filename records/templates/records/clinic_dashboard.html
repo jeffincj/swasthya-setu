@@ -1,0 +1,125 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-staff{% endblock %}
+{% block title %}Clinic Dashboard - Swasthya Setu{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h1>Clinic Staff Dashboard</h1>
+  <p class="subtitle">Scan or enter a patient's Health ID to view their full record.</p>
+
+  <button type="button" class="btn" id="toggle-scan-btn" onclick="toggleScanner()">📷 Scan QR Code</button>
+
+  <div id="qr-reader" style="width: 100%; max-width: 400px; margin-top: 14px; display:none;"></div>
+  <p id="scan-status" style="font-size:12px; color:var(--muted); margin-top:6px;"></p>
+
+  <form method="post" style="margin-top:16px;">
+    {% csrf_token %}
+    {{ form.health_id }}
+    {% if form.health_id.errors %}<p class="error">{{ form.health_id.errors.0 }}</p>{% endif %}
+    <button type="submit">Look Up Patient</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let scanner = null;
+let scanning = false;
+
+function toggleScanner() {
+  const readerDiv = document.getElementById('qr-reader');
+  const statusEl = document.getElementById('scan-status');
+  const btn = document.getElementById('toggle-scan-btn');
+
+  if (scanning) {
+    stopScanner();
+    return;
+  }
+
+  readerDiv.style.display = 'block';
+  btn.textContent = '✕ Stop Scanning';
+  statusEl.textContent = 'Requesting camera access...';
+
+  scanner = new Html5Qrcode("qr-reader");
+  scanner.start(
+    { facingMode: "environment" },  // prefer back camera on phones
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      // Successful scan - fill the input and auto-submit
+      document.getElementById('id_health_id').value = decodedText.trim();
+      statusEl.textContent = 'QR code detected — looking up patient...';
+      stopScanner();
+      document.querySelector('form[method="post"]').submit();
+    },
+    () => { /* ignore per-frame "not found" callbacks, this fires constantly while scanning */ }
+  ).then(() => {
+    scanning = true;
+    statusEl.textContent = 'Point the camera at the patient\'s QR code.';
+  }).catch((err) => {
+    statusEl.textContent = 'Camera access failed: ' + err +
+      '. Note: camera scanning requires HTTPS or localhost — it will not work over a plain http:// LAN address.';
+    btn.textContent = '📷 Scan QR Code';
+  });
+}
+
+function stopScanner() {
+  const btn = document.getElementById('toggle-scan-btn');
+  const readerDiv = document.getElementById('qr-reader');
+  if (scanner && scanning) {
+    scanner.stop().then(() => {
+      scanner.clear();
+      readerDiv.style.display = 'none';
+      btn.textContent = '📷 Scan QR Code';
+      scanning = false;
+    }).catch(() => {});
+  }
+}
+</script>
+
+{% if patient %}
+<div class="card">
+  <h2>{{ patient.full_name }}</h2>
+  <p style="font-size:13px; color:var(--muted);">Health ID: {{ patient.health_id }}</p>
+  <p><strong>Home State:</strong> {{ patient.home_state }} &middot; <strong>Worksite:</strong> {{ patient.current_worksite }}</p>
+  <p><strong>Language:</strong> {{ patient.get_preferred_language_display }}</p>
+  <p><strong>Known Conditions:</strong> {{ patient.known_conditions|default:"None recorded" }}</p>
+  <p><strong>Known Allergies:</strong> {{ patient.known_allergies|default:"None recorded" }}</p>
+
+  <a href="{% url 'add_visit' patient.health_id %}" class="btn">+ Add New Visit Record</a>
+  <a href="{% url 'edit_patient' patient.health_id %}" class="btn btn-secondary">✎ Propose Edit to Details</a>
+
+  {% if pending_edits %}
+    <div style="margin-top:16px; padding:14px 18px; background:#fffbeb; border-radius:8px; border-left:4px solid #f59e0b;">
+      <strong style="font-size:13px; color:#92400e;">⏳ Pending changes awaiting this patient's approval:</strong>
+      {% for req in pending_edits %}
+        <ul style="margin:8px 0 0; padding-left:20px; font-size:13px; color:#78350f;">
+          {% for field, value in req.changes.items %}
+            <li>{{ field }} → {{ value }}</li>
+          {% endfor %}
+        </ul>
+        <p style="font-size:12px; color:#92400e; margin:4px 0 0;">Submitted {{ req.requested_at|date:"d M Y, H:i" }} — reason: {{ req.reason }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <h2 style="margin-top:24px;">Visit History</h2>
+  {% for v in patient.visits.all %}
+    <div class="visit-item">
+      <strong>{{ v.visit_date }}</strong> — {{ v.clinic_name }}<br>
+      <span style="color:var(--muted);">Diagnosis:</span> {{ v.diagnosis }}<br>
+      <span style="color:var(--muted);">Medications:</span> {{ v.medications_prescribed }}
+      {% if v.uploaded_document %}
+        <br><span style="color:var(--muted);">Document:</span> <a href="{{ v.uploaded_document.url }}" target="_blank">View uploaded file</a>
+        {% if v.ocr_extracted_text %}
+          <details style="margin-top:6px;">
+            <summary style="cursor:pointer; font-size:12px; color:var(--primary-dark);">OCR extracted text</summary>
+            <pre style="white-space:pre-wrap; font-size:12px; background:#f1f5f9; padding:8px; border-radius:6px;">{{ v.ocr_extracted_text }}</pre>
+          </details>
+        {% endif %}
+      {% endif %}
+    </div>
+  {% empty %}
+    <p style="color:var(--muted);">No visits recorded yet.</p>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
