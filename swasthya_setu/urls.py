@@ -15,14 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
+from django.views.static import serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('records.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serving media files (QR codes, patient photos, uploaded documents) directly
+# via Django's serve() view, bypassing django.conf.urls.static.static() -
+# that helper silently no-ops when DEBUG=False internally, regardless of any
+# DEBUG check wrapped around it, which was the real cause of QR codes 404ing
+# in production. Django's docs recommend a dedicated file server for real
+# production - but for a hackathon prototype on Render's free tier, serving
+# media through Django directly is the pragmatic choice here.
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
