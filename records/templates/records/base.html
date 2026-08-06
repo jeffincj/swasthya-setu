@@ -164,6 +164,54 @@
     border-radius: 12px; font-size: 11px; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
   form p { margin: 0; }
+
+/* Mobile responsiveness - nav especially needed real fixing, it had zero
+   breakpoints before and would overflow badly on phone-width screens
+   with the brand, role label, language switcher, and 4-5 nav links all
+   forced into one unwrapped row. */
+@media (max-width: 720px) {
+  nav {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 6px;
+    row-gap: 8px;
+  }
+  nav .brand { font-size: 15px; }
+  nav .brand span { display: block; font-size: 11px; margin-top: 2px; }
+  nav > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+    align-items: center;
+  }
+  nav a {
+    margin-left: 0;
+    font-size: 12px;
+    padding: 5px 9px;
+  }
+  #nav-lang-switch {
+    font-size: 12px;
+    padding: 4px 6px;
+    margin-right: 4px;
+    order: -1;
+  }
+
+  .container { padding: 0 14px; margin: 20px auto; }
+  h1 { font-size: 21px; }
+  h2 { font-size: 16px; }
+  .card { padding: 18px; }
+  .subtitle { font-size: 13px; margin-bottom: 16px; }
+
+  .qr-box img { max-width: 150px; }
+  .chat-box { height: 220px; }
+  .chat-user, .chat-ai { margin-left: 12px; margin-right: 12px; }
+
+  button, .btn { padding: 10px 16px; font-size: 13px; }
+  input, select, textarea { font-size: 13px; padding: 9px 10px; }
+
+  .visit-item { padding: 10px 14px; }
+}
 </style>
 </head>
 <body class="{% block body_class %}{% endblock %}">
