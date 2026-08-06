@@ -92,7 +92,8 @@ def build_patient_context(patient):
     """Turns the patient's DB record into a clean text block for the LLM prompt."""
     latest_visits = patient.visits.all()[:3]
     visits_text = "\n".join(
-        f"- {v.visit_date}: {v.diagnosis}. Medications: {v.medications_prescribed}. "
+        f"- {v.visit_date} at {v.clinic_name}: {v.diagnosis}. "
+        f"Medications: {v.medications_prescribed}. "
         f"Follow-up: {v.follow_up_date or 'None scheduled'}"
         for v in latest_visits
     ) or "No visit history recorded yet."
