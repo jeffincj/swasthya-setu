@@ -160,6 +160,16 @@ def logout_view(request):
 @login_required
 def patient_dashboard(request):
     patient = get_object_or_404(Patient, user=request.user)
+
+    # Self-heal: the database (Postgres) now persists permanently, but the
+    # actual QR image FILE lives on Render's ephemeral disk, which can be
+    # wiped on a redeploy even when the database record survives. If that
+    # happens, silently regenerate the QR code here instead of showing a
+    # broken image.
+    if not patient.qr_code or not patient.qr_code.storage.exists(patient.qr_code.name):
+        generate_qr_code(patient)
+        patient.save()
+
     pending_edits = patient.edit_requests.filter(status="pending")
     return render(request, "records/patient_dashboard.html", {
         "patient": patient,
