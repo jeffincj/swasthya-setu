@@ -1,0 +1,36 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-patient{% endblock %}
+{% block title %}Migrant Health Passport - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card passport-print">
+  <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+    <div><h1>🪪 Migrant Health Passport</h1><p class="subtitle">Portable health and worker profile</p></div>
+    {% if patient.photo %}<img src="{{ patient.photo.url }}" alt="Patient photo" style="width:80px;height:80px;object-fit:cover;border-radius:12px;">{% endif %}
+  </div>
+  <div class="feature-grid">
+    <div><strong>Name</strong><span>{{ patient.full_name }}</span></div>
+    <div><strong>Health ID</strong><span>{{ patient.health_id }}</span></div>
+    <div><strong>Blood Group</strong><span>{{ patient.blood_group|default:"Not recorded" }}</span></div>
+    <div><strong>Occupation</strong><span>{{ patient.occupation|default:"Not recorded" }}</span></div>
+    <div><strong>Vaccination</strong><span>{{ patient.vaccination_status|default:"Not recorded" }}</span></div>
+    <div><strong>Emergency Contact</strong><span>{{ patient.emergency_contact|default:"Not recorded" }}</span></div>
+    <div><strong>Insurance</strong><span>{{ patient.insurance_status|default:"Not recorded" }}</span></div>
+    <div><strong>Preferred Language</strong><span>{{ patient.get_preferred_language_display }}</span></div>
+    <div><strong>Current Worksite</strong><span>{{ patient.current_worksite }}</span></div>
+  </div>
+  <div style="margin-top:22px;"><h2>Worksite History</h2>
+    {% if patient.worksite_history %}<div class="history-box">{{ patient.worksite_history|linebreaksbr }}</div>{% else %}<p style="color:var(--muted)">No worksite history recorded.</p>{% endif %}
+  </div>
+  <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
+    <button onclick="window.print()">🖨 Print / Save as PDF</button>
+    <a href="{% url 'edit_patient' %}" class="btn">
+    ✏️ Update My Details</a>
+    <a class="btn btn-secondary" href="{% url 'emergency_qr' %}">🆘 Emergency QR</a>
+  </div>
+</div>
+<style>
+.feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.feature-grid>div{padding:14px;border:1px solid var(--border);border-radius:10px;background:#f8fafc}.feature-grid strong,.feature-grid span{display:block}.feature-grid strong{font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}.history-box{padding:14px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)}
+@media(max-width:650px){.feature-grid{grid-template-columns:1fr}}
+@media print{nav,.no-print{display:none!important}body{background:white}.container{max-width:none;margin:0}.card{box-shadow:none;border:none}.passport-print{padding:0}}
+</style>
+{% endblock %}

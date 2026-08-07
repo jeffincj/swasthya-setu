@@ -29,4 +29,19 @@ urlpatterns = [
 
     path("govt/", views.govt_dashboard, name="govt_dashboard"),
     path("govt/staff/<int:profile_id>/<str:decision>/", views.review_staff_request, name="review_staff_request"),
+
+    path("dashboard/health-passport/", views.health_passport, name="health_passport"),
+    path("dashboard/emergency-qr/", views.emergency_qr, name="emergency_qr"),
+    path("dashboard/medicine-reminders/", views.medicine_reminders, name="medicine_reminders"),
+    path(
+        "dashboard/medicine-reminders/<int:reminder_id>/edit/",
+        views.edit_medicine_reminder,
+        name="edit_medicine_reminder"
+    ),
+    path(
+        "dashboard/medicine-history/",
+        views.medicine_history,
+        name="medicine_history"),
+    path("dashboard/health-trends/", views.health_trends, name="health_trends"),
+
 ]

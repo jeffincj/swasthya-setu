@@ -1,0 +1,30 @@
+{% extends "records/base.html" %}
+
+{% block body_class %}theme-patient{% endblock %}
+
+{% block title %}Edit Medicine Reminder - Swasthya Setu{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:480px; margin:0 auto;">
+
+    <h1>Edit Medicine Reminder</h1>
+
+    <p class="subtitle">
+        Update your medicine schedule details.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit">
+            Update Reminder
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

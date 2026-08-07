@@ -49,3 +49,18 @@ def extract_text_from_document(image_field):
         return cleaned
     except Exception as e:
         return f"[OCR failed: {str(e)}. Please verify document manually.]"
+
+
+def generate_qr_data_uri(text):
+    """
+    Generates a QR code entirely in memory (no file saved to disk) and
+    returns it as a base64 data URI the browser can display directly.
+    Used for the Emergency SOS QR specifically, so there's no file that
+    can go missing after a redeploy (unlike the main Health ID QR).
+    """
+    import base64
+    qr_img = qrcode.make(text)
+    buffer = io.BytesIO()
+    qr_img.save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/png;base64,{encoded}"

@@ -1,0 +1,225 @@
+{% extends "records/base.html" %}
+
+{% block body_class %}theme-patient{% endblock %}
+
+{% block title %}Medicine Reminders - Swasthya Setu{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>💊 Medicine Reminders</h1>
+
+    <p class="subtitle">
+        Manage your daily and weekly medicine schedules.
+    </p>
+
+    <form method="post"
+          style="display:grid;
+                 grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+                 gap:10px;
+                 align-items:end;">
+
+        {% csrf_token %}
+
+        <input
+            type="hidden"
+            name="action"
+            value="add"
+        >
+
+        <div>
+            <label>Medicine</label>
+            {{ form.medicine_name }}
+        </div>
+
+        <div>
+            <label>Dosage</label>
+            {{ form.dosage }}
+        </div>
+
+        <div>
+            <label>Time</label>
+            {{ form.time }}
+        </div>
+
+        <div>
+            <label>Start Date</label>
+            {{ form.start_date }}
+        </div>
+
+        <div>
+            <label>End Date</label>
+            {{ form.end_date }}
+        </div>
+
+        <div>
+            <label>Frequency</label>
+            {{ form.frequency }}
+        </div>
+
+        <div>
+            <label>Weekly Day</label>
+            {{ form.weekly_day }}
+        </div>
+
+        <button type="submit">
+            Add
+        </button>
+
+    </form>
+
+    {% if form.errors %}
+        <div style="margin-top:15px;">
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+    ">
+
+        <h2>📅 Today's Medicines</h2>
+
+        <a
+            href="{% url 'medicine_history' %}"
+            class="btn"
+        >
+            📋 History
+        </a>
+
+    </div>
+
+
+    {% for dose in todays_doses %}
+
+        <div class="reminder-row">
+
+            <div>
+
+                <strong>
+                    {{ dose.reminder.medicine_name }}
+                </strong>
+
+                {% if dose.reminder.dosage %}
+                    · {{ dose.reminder.dosage }}
+                {% endif %}
+
+                <br>
+
+                <span style="color:var(--muted)">
+                    ⏰ {{ dose.scheduled_time|time:"g:i A" }}
+                </span>
+
+                {% if dose.reminder.frequency == "weekly" %}
+                    <br>
+                    <span style="color:var(--muted)">
+                        Weekly
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div>
+
+                {% if dose.taken %}
+
+                    <span class="tag">
+                        ✔ Taken
+                    </span>
+
+                    {% if dose.taken_at %}
+                        <br>
+                        <small style="color:var(--muted)">
+                            {{ dose.taken_at|date:"g:i A" }}
+                        </small>
+                    {% endif %}
+
+                {% else %}
+
+                    <form method="post">
+
+                        {% csrf_token %}
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="taken"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="dose_id"
+                            value="{{ dose.id }}"
+                        >
+
+                        <button
+                            type="submit"
+                            style="margin-top:0;"
+                        >
+                            Mark Taken
+                        </button>
+
+                    </form>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    {% empty %}
+
+        <p style="color:var(--muted)">
+            No medicines scheduled for today.
+        </p>
+
+    {% endfor %}
+
+</div>
+
+
+<style>
+
+.reminder-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    padding:14px 0;
+    border-bottom:1px solid var(--border);
+}
+
+@media(max-width:1000px) {
+
+    form[style*="grid-template-columns"] {
+        grid-template-columns:1fr 1fr !important;
+    }
+
+}
+
+@media(max-width:700px) {
+
+    form[style*="grid-template-columns"] {
+        grid-template-columns:1fr !important;
+    }
+
+    .reminder-row {
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+}
+
+</style>
+
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-patient{% endblock %}
+{% block title %}Emergency SOS QR - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card" style="max-width:620px;margin:auto;text-align:center;">
+  <h1>🆘 Emergency SOS QR</h1>
+  <p class="subtitle">This QR intentionally contains only emergency information.</p>
+  <div class="qr-box"><img src="{{ qr_data_uri }}" alt="Emergency SOS QR code" style="width:280px;max-width:90%;"><p><strong>{{ patient.full_name }}</strong></p></div>
+  <div class="emergency-grid">
+    <div><strong>Blood Group</strong><span>{{ patient.blood_group|default:"Not recorded" }}</span></div>
+    <div><strong>Allergies</strong><span>{{ patient.known_allergies|default:"None recorded" }}</span></div>
+    <div><strong>Current Medicines</strong><span>{{ patient.current_medicines|default:"Not recorded" }}</span></div>
+    <div><strong>Emergency Contact</strong><span>{{ patient.emergency_contact|default:"Not recorded" }}</span></div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:18px;">No diagnosis history, identity documents, or other sensitive medical history is included.</p>
+  <button onclick="window.print()">🖨 Print QR</button>
+</div>
+<style>.emergency-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-top:18px}.emergency-grid>div{padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px}.emergency-grid strong,.emergency-grid span{display:block}.emergency-grid strong{font-size:11px;color:var(--muted);text-transform:uppercase}.emergency-grid span{margin-top:3px}@media(max-width:600px){.emergency-grid{grid-template-columns:1fr}}@media print{nav{display:none!important}body{background:white}.container{margin:0}.card{box-shadow:none;border:none}}</style>
+{% endblock %}

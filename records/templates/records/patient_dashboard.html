@@ -89,6 +89,191 @@
   {% endif %}
 </div>
 
+<!-- ================= NEW HEALTH FEATURES ================= -->
+
+<div class="card">
+  <h2>🩺 Your Health Tools</h2>
+
+  <p style="font-size:13px; color:var(--muted);">
+    Access your important health information and tools.
+  </p>
+
+  <div class="health-tools-grid">
+
+    <a href="{% url 'health_passport' %}" class="health-tool">
+      <div class="health-tool-icon">🪪</div>
+      <div>
+        <h3>Health Passport</h3>
+        <p>View your health profile, occupation, vaccination and emergency details.</p>
+      </div>
+    </a>
+
+    <a href="{% url 'emergency_qr' %}" class="health-tool emergency">
+      <div class="health-tool-icon">🆘</div>
+      <div>
+        <h3>Emergency SOS</h3>
+        <p>Quick access to essential emergency information.</p>
+      </div>
+    </a>
+
+    <a href="{% url 'health_trends' %}" class="health-tool">
+      <div class="health-tool-icon">📈</div>
+      <div>
+        <h3>Health Trends</h3>
+        <p>Track blood pressure, blood sugar and weight over time.</p>
+      </div>
+    </a>
+
+    <a href="{% url 'medicine_reminders' %}" class="health-tool">
+      <div class="health-tool-icon">💊</div>
+      <div>
+        <h3>Medicine Reminders</h3>
+        <p>Manage medicine schedules and mark doses as taken.</p>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- ================= AI HEALTH RISK ================= -->
+
+<div class="card">
+  <h2>🤖 AI Health Risk Score</h2>
+
+  <div class="risk-score-box">
+    <div class="risk-score-number">
+      {{ risk_score }}
+    </div>
+
+    <div>
+      <strong>{{ risk_level }}</strong>
+      <p style="font-size:13px; color:var(--muted); margin:4px 0 0;">
+        Rule-based health risk assessment
+      </p>
+    </div>
+  </div>
+
+  {% if risk_factors %}
+    <div style="margin-top:14px;">
+      <strong>Risk factors:</strong>
+      <ul style="margin-top:6px;">
+        {% for factor in risk_factors %}
+          <li>{{ factor }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <p style="font-size:11px; color:var(--muted); font-style:italic;">
+    This score is an informational rule-based estimate and is not a medical diagnosis.
+  </p>
+</div>
+
+<!-- ================= OCCUPATIONAL HEALTH ================= -->
+
+<div class="card">
+  <h2>⚠️ Occupational Health Warnings</h2>
+
+  {% if occupational_warnings %}
+    <p style="font-size:13px; color:var(--muted);">
+      Based on your occupation, these health risks may require attention:
+    </p>
+
+    <div class="occupation-warning-grid">
+      {% for warning in occupational_warnings %}
+        <div class="occupation-warning">
+          ⚠️ {{ warning }}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="color:var(--muted);">
+      Add your occupation in <strong>Update My Details</strong>
+      to receive occupational health warnings.
+    </p>
+  {% endif %}
+</div>
+
+<!-- ================= END NEW HEALTH FEATURES ================= -->
+
+<style>
+.health-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.health-tool {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid #dcebea;
+  background: #f7fcfb;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.health-tool:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.health-tool h3 {
+  margin: 0 0 6px;
+  color: #245e5b;
+  font-size: 17px;
+}
+
+.health-tool p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.health-tool-icon {
+  font-size: 30px;
+  min-width: 38px;
+}
+
+.risk-score-box {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 15px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f7fcfb;
+}
+
+.risk-score-number {
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.risk-score-box strong {
+  font-size: 20px;
+}
+
+.occupation-warning-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.occupation-warning {
+  padding: 12px 15px;
+  border-radius: 10px;
+  background: #fff8e7;
+  border: 1px solid #f1d58a;
+  color: #765b13;
+  font-size: 14px;
+}
+</style>
+
 <script>
 const chatBox = document.getElementById('chat-box');
 const chatForm = document.getElementById('chat-form');

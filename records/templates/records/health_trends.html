@@ -1,0 +1,13 @@
+{% extends "records/base.html" %}
+{% block body_class %}theme-patient{% endblock %}
+{% block title %}Health Trends - Swasthya Setu{% endblock %}
+{% block content %}
+<div class="card"><h1>📈 Health Trend Dashboard</h1><p class="subtitle">Track blood pressure, blood sugar and weight over time.</p><p style="font-size:12px;color:var(--muted)">Demo data is shown when no measurements have been recorded yet.</p></div>
+<div class="chart-grid"><div class="card"><h2>Blood Pressure</h2><canvas id="bpChart"></canvas></div><div class="card"><h2>Blood Sugar</h2><canvas id="sugarChart"></canvas></div><div class="card"><h2>Weight</h2><canvas id="weightChart"></canvas></div></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script>
+const raw={{ trend_data|safe }}; const demo=raw.labels.length?raw:{labels:['Jan','Feb','Mar','Apr','May'],systolic:[120,122,119,121,118],diastolic:[80,81,78,79,77],sugar:[98,101,96,103,99],weight:[70,69.5,69,68.4,68]};
+new Chart(document.getElementById('bpChart'),{type:'line',data:{labels:demo.labels,datasets:[{label:'Systolic',data:demo.systolic,tension:.3},{label:'Diastolic',data:demo.diastolic,tension:.3}]},options:{responsive:true}});
+new Chart(document.getElementById('sugarChart'),{type:'line',data:{labels:demo.labels,datasets:[{label:'Blood Sugar',data:demo.sugar,tension:.3}]},options:{responsive:true}});
+new Chart(document.getElementById('weightChart'),{type:'line',data:{labels:demo.labels,datasets:[{label:'Weight (kg)',data:demo.weight,tension:.3}]},options:{responsive:true}});
+</script><style>.chart-grid{display:grid;grid-template-columns:1fr 1fr}.chart-grid .card:last-child{grid-column:1/-1}@media(max-width:800px){.chart-grid{display:block}}</style>
+{% endblock %}

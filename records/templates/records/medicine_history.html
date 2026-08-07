@@ -1,0 +1,129 @@
+{% extends "records/base.html" %}
+
+{% block body_class %}theme-patient{% endblock %}
+
+{% block title %}Medicine History - Swasthya Setu{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+    ">
+
+        <div>
+            <h1>📋 Medicine History</h1>
+
+            <p class="subtitle">
+                View your previous medicine doses and whether they were taken.
+            </p>
+        </div>
+
+        <a
+            href="{% url 'medicine_reminders' %}"
+            class="btn"
+        >
+            ← Back to Reminders
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    {% for dose in doses %}
+
+        <div class="reminder-row">
+
+            <div>
+
+                <strong>
+                    {{ dose.reminder.medicine_name }}
+                </strong>
+
+                {% if dose.reminder.dosage %}
+                    · {{ dose.reminder.dosage }}
+                {% endif %}
+
+                <br>
+
+                <span style="color:var(--muted)">
+                    📅 {{ dose.scheduled_date|date:"d M Y" }}
+                    ·
+                    ⏰ {{ dose.scheduled_time|time:"g:i A" }}
+                </span>
+
+            </div>
+
+
+            <div>
+
+                {% if dose.taken %}
+
+                    <span class="tag">
+                        ✔ Taken
+                    </span>
+
+                    {% if dose.taken_at %}
+
+                        <br>
+
+                        <small style="color:var(--muted)">
+                            Taken at
+                            {{ dose.taken_at|date:"d M Y, g:i A" }}
+                        </small>
+
+                    {% endif %}
+
+                {% else %}
+
+                    <span class="tag tag-warning">
+                        ✕ Not Taken
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    {% empty %}
+
+        <p style="color:var(--muted)">
+            No medicine history available yet.
+        </p>
+
+    {% endfor %}
+
+</div>
+
+
+<style>
+
+.reminder-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    padding:14px 0;
+    border-bottom:1px solid var(--border);
+}
+
+@media(max-width:700px) {
+
+    .reminder-row {
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+}
+
+</style>
+
+{% endblock %}

@@ -6,17 +6,33 @@ from django.contrib.auth.models import User, Group
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.urls import reverse
+from django.utils import timezone
+from django.db.models import Q
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import user_passes_test
 from django.utils import timezone
 
-from .models import Patient, VisitRecord, ClinicStaffProfile, PatientEditRequest, VisitDocument
-from .forms import (
-    PatientRegistrationForm, VisitRecordForm, PatientLookupForm,
-    ClinicStaffRegistrationForm, PatientEditRequestForm, PatientSelfEditForm,
+from .models import (
+    Patient,
+    VisitRecord,
+    ClinicStaffProfile,
+    PatientEditRequest,
+    VisitDocument,
+    HealthMetric,
+    MedicineReminder,
+    MedicineDose,
 )
-from .utils import generate_qr_code, extract_text_from_document
+from .forms import (
+    PatientRegistrationForm,
+    VisitRecordForm,
+    PatientLookupForm,
+    ClinicStaffRegistrationForm,
+    PatientEditRequestForm,
+    PatientSelfEditForm,
+    MedicineReminderForm,
+)
+from .utils import generate_qr_code, extract_text_from_document, generate_qr_data_uri
 from .ai_assistant import answer_patient_question
 
 def csrf_failure(request, reason=""):
@@ -161,22 +177,100 @@ def logout_view(request):
 def patient_dashboard(request):
     patient = get_object_or_404(Patient, user=request.user)
 
-    # Self-heal: the database (Postgres) now persists permanently, but the
-    # actual QR image FILE lives on Render's ephemeral disk, which can be
-    # wiped on a redeploy even when the database record survives. If that
-    # happens, silently regenerate the QR code here instead of showing a
-    # broken image.
+    # Self-heal QR code if the stored image file is missing
     if not patient.qr_code or not patient.qr_code.storage.exists(patient.qr_code.name):
         generate_qr_code(patient)
         patient.save()
 
+    # Pending patient edit requests
     pending_edits = patient.edit_requests.filter(status="pending")
-    return render(request, "records/patient_dashboard.html", {
-        "patient": patient,
-        "visits": patient.visits.all(),
-        "eligibility": patient.scheme_eligibility,
-        "pending_edits": pending_edits,
-    })
+
+    # ============================================================
+    # AI HEALTH RISK SCORE
+    # Rule-based scoring - no ML required
+    # ============================================================
+
+    risk_score = 0
+    risk_factors = []
+
+    conditions = (patient.known_conditions or "").lower()
+
+    # Diabetes history: +20
+    if "diabetes" in conditions:
+        risk_score += 20
+        risk_factors.append("Diabetes history (+20)")
+
+    # Hypertension history: +15
+    if "hypertension" in conditions:
+        risk_score += 15
+        risk_factors.append("Hypertension history (+15)")
+
+    # Missed follow-up: +20
+    from django.utils import timezone
+
+    if patient.last_follow_up:
+        if patient.last_follow_up < timezone.localdate():
+            risk_score += 20
+            risk_factors.append("Missed follow-up (+20)")
+
+    # BMI > 30: +15
+    if patient.bmi is not None:
+        if patient.bmi > 30:
+            risk_score += 15
+            risk_factors.append("BMI above 30 (+15)")
+
+    # Determine risk level
+    if risk_score >= 40:
+        risk_level = "🔴 High"
+    elif risk_score >= 20:
+        risk_level = "🟡 Moderate"
+    else:
+        risk_level = "🟢 Low"
+
+    # ============================================================
+    # OCCUPATIONAL DISEASE PREDICTION
+    # Simple rule-based prediction - no ML required
+    # ============================================================
+
+    occupational_warnings = []
+
+    occupation = getattr(patient, "occupation", "") or ""
+    occupation = occupation.lower()
+
+    if "construction" in occupation:
+        occupational_warnings = [
+            "Dust Exposure",
+            "Heat Stroke",
+            "Back Injury",
+        ]
+
+    elif "factory" in occupation or "manufactur" in occupation:
+        occupational_warnings = [
+            "Chemical Exposure",
+            "Respiratory Disease",
+        ]
+
+    elif "fishing" in occupation or "fisher" in occupation:
+        occupational_warnings = [
+            "Skin Disease",
+        ]
+
+    return render(
+        request,
+        "records/patient_dashboard.html",
+        {
+            "patient": patient,
+            "visits": patient.visits.all(),
+            "eligibility": patient.scheme_eligibility,
+            "pending_edits": pending_edits,
+
+            # New health features
+            "risk_score": risk_score,
+            "risk_level": risk_level,
+            "risk_factors": risk_factors,
+            "occupational_warnings": occupational_warnings,
+        },
+    )
 
 @login_required
 def edit_my_profile(request):
@@ -398,3 +492,317 @@ def review_staff_request(request, profile_id, decision):
     profile.reviewed_at = timezone.now()
     profile.save()
     return redirect("govt_dashboard")
+
+
+# ---------- New Health Features ----------
+
+@login_required
+def health_passport(request):
+    patient = get_object_or_404(Patient, user=request.user)
+
+    return render(
+        request,
+        "records/health_passport.html",
+        {
+            "patient": patient,
+        },
+    )
+
+
+@login_required
+def emergency_qr(request):
+    patient = get_object_or_404(Patient, user=request.user)
+
+    emergency_data = {
+        "Blood Group": patient.blood_group or "Not recorded",
+        "Allergies": patient.known_allergies or "None recorded",
+        "Current Medicines": patient.current_medicines or "Not recorded",
+        "Emergency Contact": patient.emergency_contact or "Not recorded",
+    }
+
+    # Encode only the limited emergency info into the QR - never the full
+    # medical record. This is a deliberate privacy choice, not an oversight.
+    qr_text = (
+        f"EMERGENCY INFO - {patient.full_name}\n"
+        f"Blood Group: {emergency_data['Blood Group']}\n"
+        f"Allergies: {emergency_data['Allergies']}\n"
+        f"Current Medicines: {emergency_data['Current Medicines']}\n"
+        f"Emergency Contact: {emergency_data['Emergency Contact']}"
+    )
+    qr_data_uri = generate_qr_data_uri(qr_text)
+
+    return render(
+        request,
+        "records/emergency_qr.html",
+        {
+            "patient": patient,
+            "emergency_data": emergency_data,
+            "qr_data_uri": qr_data_uri,
+        },
+    )
+
+
+@login_required
+def health_trends(request):
+    patient = get_object_or_404(Patient, user=request.user)
+
+    metrics = HealthMetric.objects.filter(
+        patient=patient
+    ).order_by("recorded_at")
+
+    trend_data = {"labels": [], "systolic": [], "diastolic": [], "sugar": [], "weight": []}
+    for m in metrics:
+        trend_data["labels"].append(m.recorded_at.strftime("%b %d"))
+
+        systolic, diastolic = None, None
+        if m.blood_pressure and "/" in m.blood_pressure:
+            try:
+                sys_str, dia_str = m.blood_pressure.split("/")
+                systolic, diastolic = int(sys_str.strip()), int(dia_str.strip())
+            except (ValueError, IndexError):
+                pass
+        trend_data["systolic"].append(systolic)
+        trend_data["diastolic"].append(diastolic)
+        trend_data["sugar"].append(float(m.blood_sugar) if m.blood_sugar is not None else None)
+        trend_data["weight"].append(float(m.weight) if m.weight is not None else None)
+
+    return render(
+        request,
+        "records/health_trends.html",
+        {
+            "patient": patient,
+            "metrics": metrics,
+            "trend_data": json.dumps(trend_data),
+        },
+    )
+
+
+@login_required
+def medicine_reminders(request):
+    patient = get_object_or_404(
+        Patient,
+        user=request.user
+    )
+
+    if request.method == "POST":
+
+        action = request.POST.get("action")
+
+        # =====================================================
+        # ADD NEW MEDICINE
+        # =====================================================
+
+        if action == "add":
+
+            form = MedicineReminderForm(request.POST)
+
+            if form.is_valid():
+
+                reminder = form.save(commit=False)
+                reminder.patient = patient
+                reminder.save()
+
+                messages.success(
+                    request,
+                    f"{reminder.medicine_name} reminder added successfully."
+                )
+
+                return redirect("medicine_reminders")
+
+        # =====================================================
+        # MARK DOSE AS TAKEN
+        # =====================================================
+
+        elif action == "taken":
+
+            dose_id = request.POST.get("dose_id")
+
+            dose = get_object_or_404(
+                MedicineDose,
+                id=dose_id,
+                reminder__patient=patient
+            )
+
+            if not dose.taken:
+
+                dose.taken = True
+                dose.taken_at = timezone.now()
+                dose.save()
+
+                messages.success(
+                    request,
+                    f"{dose.reminder.medicine_name} marked as taken."
+                )
+
+            return redirect("medicine_reminders")
+
+        # =====================================================
+        # DELETE A REMINDER
+        # =====================================================
+
+        elif action == "delete":
+
+            reminder_id = request.POST.get("reminder_id")
+
+            # patient=patient here ensures a patient can only ever delete
+            # their OWN reminder - never someone else's, even if they
+            # guess another reminder's ID.
+            reminder = get_object_or_404(
+                MedicineReminder,
+                id=reminder_id,
+                patient=patient
+            )
+
+            medicine_name = reminder.medicine_name
+            reminder.delete()
+
+            messages.success(
+                request,
+                f"{medicine_name} reminder deleted."
+            )
+
+            return redirect("medicine_reminders")
+
+    else:
+
+        form = MedicineReminderForm()
+
+    # =====================================================
+    # TODAY'S DATE
+    # =====================================================
+
+    today = timezone.localdate()
+
+    # =====================================================
+    # ACTIVE REMINDERS
+    # =====================================================
+
+    active_reminders = MedicineReminder.objects.filter(
+        patient=patient,
+        start_date__lte=today
+    ).filter(
+        end_date__isnull=True
+    ) | MedicineReminder.objects.filter(
+            patient=patient,
+            start_date__lte=today,
+            end_date__gte=today
+    )
+
+    # =====================================================
+    # CREATE TODAY'S DOSES
+    # =====================================================
+
+    for reminder in active_reminders:
+
+        should_create = False
+
+        if reminder.frequency == "daily":
+            should_create = True
+
+        elif reminder.frequency == "weekly":
+
+            if reminder.weekly_day == today.weekday():
+                should_create = True
+
+        if should_create:
+
+            MedicineDose.objects.get_or_create(
+                reminder=reminder,
+                scheduled_date=today,
+                defaults={
+                    "scheduled_time": reminder.time
+                }
+            )
+
+    # =====================================================
+    # GET TODAY'S DOSES
+    # =====================================================
+
+    todays_doses = MedicineDose.objects.filter(
+        reminder__patient=patient,
+        scheduled_date=today
+    ).select_related(
+        "reminder"
+    ).order_by(
+        "scheduled_time"
+    )
+
+    return render(
+        request,
+        "records/medicine_reminders.html",
+        {
+            "patient": patient,
+            "form": form,
+            "todays_doses": todays_doses,
+            "today": today,
+            "active_reminders": active_reminders,
+        },
+    )
+
+@login_required
+def medicine_history(request):
+
+    patient = get_object_or_404(
+        Patient,
+        user=request.user
+    )
+
+    doses = MedicineDose.objects.filter(
+        reminder__patient=patient
+    ).select_related(
+        "reminder"
+    ).order_by(
+        "-scheduled_date",
+        "scheduled_time"
+    )
+
+    return render(
+        request,
+        "records/medicine_history.html",
+        {
+            "patient": patient,
+            "doses": doses,
+        },
+    )
+
+@login_required
+def edit_medicine_reminder(request, reminder_id):
+    patient = get_object_or_404(
+        Patient,
+        user=request.user
+    )
+
+    reminder = get_object_or_404(
+        MedicineReminder,
+        id=reminder_id,
+        patient=patient
+    )
+
+    if request.method == "POST":
+        form = MedicineReminderForm(
+            request.POST,
+            instance=reminder
+        )
+
+        if form.is_valid():
+            form.save()
+
+            messages.success(
+                request,
+                "Medicine reminder updated successfully."
+            )
+
+            return redirect("medicine_reminders")
+
+    else:
+        form = MedicineReminderForm(instance=reminder)
+
+    return render(
+        request,
+        "records/edit_medicine_reminder.html",
+        {
+            "form": form,
+            "reminder": reminder,
+        }
+    )
+    
