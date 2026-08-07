@@ -23,8 +23,8 @@
     <label>Follow-up Date</label>
     {{ form.follow_up_date }}
 
-    <label>Upload Prescription / Lab Report (optional)</label>
-    {{ form.uploaded_document }}
+    <label>Upload Prescription / Lab Report(s) (optional — select multiple files at once)</label>
+<input type="file" name="uploaded_documents" accept="image/*" multiple>
     <p style="font-size:11px; color:var(--muted); margin-top:4px;">
       OCR works reliably on printed/typed documents. Handwritten prescriptions may not extract cleanly — please verify manually in that case.
     </p>

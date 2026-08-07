@@ -104,6 +104,24 @@ class VisitRecord(models.Model):
         ordering = ["-visit_date"]
 
 
+class VisitDocument(models.Model):
+    """
+    One or more supporting documents (prescriptions, lab reports) attached
+    to a single visit. Replaces the old single uploaded_document field -
+    clinic staff can now upload several files at once for one visit.
+    """
+    visit = models.ForeignKey(VisitRecord, on_delete=models.CASCADE, related_name="documents")
+    file = models.ImageField(upload_to="visit_documents/")
+    ocr_extracted_text = models.TextField(blank=True, editable=False)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["uploaded_at"]
+
+    def __str__(self):
+        return f"Document for {self.visit} ({self.uploaded_at:%d %b %Y})"
+
+
 class ClinicStaffProfile(models.Model):
     """
     A clinic worker's registration request. New staff cannot log in until the

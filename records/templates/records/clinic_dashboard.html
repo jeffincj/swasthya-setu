@@ -107,17 +107,20 @@ function stopScanner() {
       <strong>{{ v.visit_date }}</strong> — {{ v.clinic_name }}<br>
       <span style="color:var(--muted);">Diagnosis:</span> {{ v.diagnosis }}<br>
       <span style="color:var(--muted);">Medications:</span> {{ v.medications_prescribed }}
-      {% if v.uploaded_document %}
-        <br><span style="color:var(--muted);">Document:</span> <a href="{{ v.uploaded_document.url }}" target="_blank">View uploaded file</a>
-        {% if v.ocr_extracted_text %}
-          <details style="margin-top:6px;">
-            <summary style="cursor:pointer; font-size:12px; color:var(--primary-dark);">OCR extracted text</summary>
-            <pre style="white-space:pre-wrap; font-size:12px; background:#f1f5f9; padding:8px; border-radius:6px;">{{ v.ocr_extracted_text }}</pre>
-          </details>
-        {% endif %}
+      {% if v.documents.all %}
+  <br><span style="color:var(--muted);">Documents ({{ v.documents.all|length }}):</span>
+  {% for doc in v.documents.all %}
+    <div style="margin:6px 0 0 12px; padding:6px 10px; background:#f8fafc; border-radius:6px;">
+      <a href="{{ doc.file.url }}" target="_blank">📄 Document {{ forloop.counter }}</a>
+      {% if doc.ocr_extracted_text %}
+        <details style="margin-top:4px;">
+          <summary style="cursor:pointer; font-size:12px; color:var(--primary-dark);">OCR extracted text</summary>
+          <pre style="white-space:pre-wrap; font-size:12px; background:#f1f5f9; padding:8px; border-radius:6px;">{{ doc.ocr_extracted_text }}</pre>
+        </details>
       {% endif %}
     </div>
-  {% empty %}
+  {% endfor %}
+{% endif %}
     <p style="color:var(--muted);">No visits recorded yet.</p>
   {% endfor %}
 </div>

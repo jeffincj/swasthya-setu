@@ -25,7 +25,7 @@ class VisitRecordForm(forms.ModelForm):
         model = VisitRecord
         fields = [
             "clinic_name", "diagnosis", "medications_prescribed",
-            "doctor_notes", "follow_up_date", "uploaded_document",
+            "doctor_notes", "follow_up_date",
         ]
         widgets = {
             "follow_up_date": forms.DateInput(attrs={"type": "date"}),

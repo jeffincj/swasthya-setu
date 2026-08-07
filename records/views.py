@@ -290,11 +290,18 @@ def add_visit(request, health_id):
             visit = form.save(commit=False)
             visit.patient = patient
             visit.created_by = request.user
-
-            if visit.uploaded_document:
-                visit.ocr_extracted_text = extract_text_from_document(visit.uploaded_document)
-
             visit.save()
+
+            for f in request.FILES.getlist("uploaded_documents"):
+                doc = VisitDocument.objects.create(visit=visit, file=f)
+                doc.ocr_extracted_text = extract_text_from_document(doc.file)
+                doc.save()
+
+            messages.success(
+                request,
+                f"Visit record saved for {patient.full_name}"
+                + (f" with {len(request.FILES.getlist('uploaded_documents'))} document(s) attached." if request.FILES.getlist("uploaded_documents") else ".")
+            )
             return redirect("clinic_dashboard")
     else:
         form = VisitRecordForm()
