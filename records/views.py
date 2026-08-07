@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import user_passes_test
 from django.utils import timezone
 
-from .models import Patient, VisitRecord, ClinicStaffProfile, PatientEditRequest
+from .models import Patient, VisitRecord, ClinicStaffProfile, PatientEditRequest, VisitDocument
 from .forms import (
     PatientRegistrationForm, VisitRecordForm, PatientLookupForm,
     ClinicStaffRegistrationForm, PatientEditRequestForm, PatientSelfEditForm,
