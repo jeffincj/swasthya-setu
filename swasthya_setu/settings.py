@@ -21,6 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 import os
+import dj_database_url
 
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
@@ -81,7 +82,7 @@ WSGI_APPLICATION = 'swasthya_setu.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-import dj_database_url
+
 
 DATABASES = {
     'default': dj_database_url.config(
